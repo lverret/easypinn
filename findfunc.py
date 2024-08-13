@@ -4,8 +4,11 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import imageio
+import warnings
 
 from tqdm import trange
+
+warnings.filterwarnings("ignore")
 
 
 # -----------------------------------------------------------------------------
@@ -72,7 +75,6 @@ class Siren(torch.nn.Module):
         hidden_features,
         hidden_layers,
         out_features,
-        outermost_linear=False,
         first_omega_0=3,
         hidden_omega_0=3.0,
     ):
@@ -95,23 +97,13 @@ class Siren(torch.nn.Module):
                     )
                 )
             )
-        if outermost_linear:
-            final_linear = torch.nn.Linear(hidden_features, out_features)
-            with torch.no_grad():
-                final_linear.weight.uniform_(
-                    -np.sqrt(6 / hidden_features) / hidden_omega_0,
-                    np.sqrt(6 / hidden_features) / hidden_omega_0,
-                )
-            self.net.append(final_linear)
-        else:
-            self.net.append(
-                SineLayer(
-                    hidden_features,
-                    out_features,
-                    is_first=False,
-                    omega_0=hidden_omega_0,
-                )
+        final_linear = torch.nn.Linear(hidden_features, out_features)
+        with torch.no_grad():
+            final_linear.weight.uniform_(
+                -np.sqrt(6 / hidden_features) / hidden_omega_0,
+                np.sqrt(6 / hidden_features) / hidden_omega_0,
             )
+        self.net.append(final_linear)
         self.net = torch.nn.Sequential(*self.net)
 
     def forward(self, xy_list):
@@ -119,7 +111,7 @@ class Siren(torch.nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# Helper functions for defining the PDE
+# Helper mathematical functions for defining the PDE
 
 
 def sin(y):
@@ -169,7 +161,7 @@ def create_images(out, resolution, config):
     for k, var in zip(range(out.size(-1)), config["unknown"]):
         z = out[:, k]
         z = z.view(resolution, resolution).rot90()
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(4.8, 4.0))
         im = ax.imshow(z.cpu().data.numpy(), extent=(0, 1, 0, 1))
         ax.set_xlabel("x")
         ax.set_ylabel("y")
@@ -229,7 +221,6 @@ if __name__ == "__main__":
         hidden_features=256,
         hidden_layers=4,
         out_features=len(config["unknown"]),
-        outermost_linear=True,
         first_omega_0=10,
         hidden_omega_0=30,
     ).to(args.device)
@@ -238,7 +229,7 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
 
     video = []
-    pbar = trange(args.nb_iter, desc="Minimizing residuals")
+    pbar = trange(args.nb_iter, desc="Finding solution")
 
     for it in pbar:
         xy_list = generate_samples(config)
@@ -249,7 +240,7 @@ if __name__ == "__main__":
         optimizer.step()
         scheduler.step()
         pbar.set_postfix(loss=loss.item())
-        if it % (args.nb_iter // 50) == 0:
+        if it % max(1, (args.nb_iter // 50)) == 0:
             xy = torch.cartesian_prod(
                 torch.linspace(0, 1, args.resolution),
                 torch.linspace(0, 1, args.resolution),
