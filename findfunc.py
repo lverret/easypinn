@@ -79,7 +79,7 @@ class Siren(torch.nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# Helper mathematical functions for defining the PDE
+# Helper mathematical functions for defining the equations to solve
 
 
 def sin(y):
@@ -118,9 +118,9 @@ def generate_samples(config):
         elif res == "domain":
             x = torch.rand((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
-        x = x.clone().detach().requires_grad_(True)
-        y = y.clone().detach().requires_grad_(True)
-        xy_list.append((x.to(args.device), y.to(args.device)))
+        x = x.clone().detach().requires_grad_(True).to(args.device)
+        y = y.clone().detach().requires_grad_(True).to(args.device)
+        xy_list.append((x, y))
     return xy_list
 
 
