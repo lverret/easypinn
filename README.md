@@ -13,6 +13,7 @@ equations:
 ```
 `python findfunc.py --config config/simple.yaml --output_file out.gif`
 
+![simple](https://github.com/user-attachments/assets/86c46751-a743-43f2-89e8-0353adf17b46)
 
 ## Heat
 ```yaml
@@ -26,6 +27,7 @@ equations:
 ```
 `python findfunc.py --config config/heat.yaml --output_file out.gif`
 
+![heat](https://github.com/user-attachments/assets/9cf10dd7-1600-4789-b2f4-7526181343c7)
 
 ## Poisson
 ```yaml
@@ -45,10 +47,14 @@ equations:
 ```
 `python findfunc.py --config config/poisson.yaml --output_file out.gif`
 
+![poisson](https://github.com/user-attachments/assets/17e738dc-0918-46bc-b0b4-b1085cc990b8)
 
 ## Helmholtz
 `python findfunc.py --config config/helmholtz.yaml --output_file out.gif`
 
+![helmholtz](https://github.com/user-attachments/assets/d799a41d-3882-49b2-840e-a7b2ebca5ed9)
 
 ## Navier stokes (Lid-driven cavity)
 `python findfunc.py --config config/navier_stokes.yaml --output_file out.gif`
+
+![navier_stokes](https://github.com/user-attachments/assets/4d9ed268-6632-4945-b363-9f2e856c5545)
