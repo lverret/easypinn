@@ -1,13 +1,13 @@
 unknown:
   - f
-residuals:
+equations:
   top:
-    - f
+    - f = 0
   bottom:
-    - f
+    - f = 0
   left:
-    - f
+    - f = 0
   right:
-    - f
+    - f = 0
   domain:
-    - "grad(grad(f, x), x) + grad(grad(f, y), y) + (2 * (8 * 3.14) ** 2 - 1) * sin(8 * 3.14 * x) * sin(8 * 3.14 * y)"
+    - grad(grad(f, x), x) + grad(grad(f, y), y) = - (2 * (8 * 3.14) ** 2 - 1) * sin(8 * 3.14 * x) * sin(8 * 3.14 * y)

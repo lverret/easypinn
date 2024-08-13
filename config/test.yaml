@@ -1,5 +1,0 @@
-unknown:
-  - f
-residuals:
-  domain:
-    - "f - x * y"

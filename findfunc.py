@@ -142,7 +142,7 @@ def grad(y, x):
 
 def generate_samples(config):
     xy_list = []
-    for res in config["residuals"]:
+    for res in config["equations"]:
         if res == "top":
             x = torch.rand((args.nb_samples, 1))
             y = torch.ones((args.nb_samples, 1))
@@ -187,16 +187,19 @@ def create_images(out, resolution, config):
 
 def compute_loss(out_list, xy_list, config):
     loss = 0
-    res = list(config["residuals"].values())
-    for out, (x, y), type in zip(out_list, xy_list, config["residuals"]):
+    res = list(config["equations"].values())
+    for out, (x, y), type in zip(out_list, xy_list, config["equations"]):
         for k, var in enumerate(config["unknown"]):
             exec(f"{var}=out[:, k:k+1]")
         if type == "domain":
             w = 0.1
         else:
             w = 0.9
-        for res in config["residuals"][type]:
-            loss += w * torch.mean(torch.abs(eval(res)))
+        for res in config["equations"][type]:
+            splits = res.split("=")
+            assert len(splits) == 2, "Incorrect definition of equations"
+            lhs, rhs = splits
+            loss += w * torch.mean(torch.abs(eval(f"{lhs} - ({rhs})")))
     return loss
 
 
@@ -204,7 +207,7 @@ def compute_loss(out_list, xy_list, config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="path to the config file")
-    parser.add_argument("--out_file", type=str, help="output filename for gif")
+    parser.add_argument("--output_file", type=str, help="output filename for gif")
     parser.add_argument("--nb_iter", type=int, default=500, help="number of iter")
     parser.add_argument(
         "--nb_samples", type=int, default=1000, help="number of uniform samples"
@@ -256,4 +259,4 @@ if __name__ == "__main__":
             images = create_images(out[0], args.resolution, config)
             video.append(images)
 
-    imageio.mimsave(args.out_file, np.array(video), loop=0)
+    imageio.mimsave(args.output_file, np.array(video), loop=0)

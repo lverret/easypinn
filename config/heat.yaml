@@ -1,7 +1,7 @@
 unknown:
   - f
-residuals:
+equations:
   left:
-    - f - sin(4 * 3.14 * y)
+    - f = sin(4 * 3.14 * y)
   domain:
-    - "grad(f, x) - 0.025 * grad(grad(f, y), y)"
+    - grad(f, x) = 0.025 * grad(grad(f, y), y)
