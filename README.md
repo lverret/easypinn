@@ -1,6 +1,6 @@
 # findfunc
 
-findfunc implements a super simple framework to quickly find the function that satifisfies a set of equations using a neural network. It is similar to [PINNs](https://github.com/maziarraissi/PINNs) in the way the given equations can be PDEs. Under the hood, a [SIREN network](https://arxiv.org/abs/2006.09661) is trained to minimize a set of losses formulated from the different equations.
+findfunc implements a super simple framework to quickly find the 2D function that satifisfies a set of equations using a neural network. It is similar to [PINNs](https://github.com/maziarraissi/PINNs) in the way the given equations can be PDEs. Under the hood, a [SIREN network](https://arxiv.org/abs/2006.09661) is trained to minimize a set of losses formulated from the different equations. numpy, matplotlib and pytorch are the only requirements.
 
 ## Simple
 Below is an example of a simple config file where the network is trained to fit the function `f(x, y) = x * y`
@@ -58,3 +58,5 @@ equations:
 `python findfunc.py --config config/navier_stokes.yaml --output_file out.gif`
 
 ![navier_stokes](https://github.com/user-attachments/assets/4d9ed268-6632-4945-b363-9f2e856c5545)
+
+Training hyperparameters can be tweaked if the found function is not good enough, see the argparse.
