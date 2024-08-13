@@ -61,7 +61,7 @@ equations:
 
 ![helmholtz](https://github.com/user-attachments/assets/d799a41d-3882-49b2-840e-a7b2ebca5ed9)
 
-## Navier stokes (Lid-driven cavity, Re=100)
+## Navier-Stokes (Lid-driven cavity, Re=100)
 `python findfunc.py --config config/navier_stokes.yaml --output_file out.gif`
 
 ![navier_stokes](https://github.com/user-attachments/assets/4d9ed268-6632-4945-b363-9f2e856c5545)
