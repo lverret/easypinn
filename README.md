@@ -1,6 +1,6 @@
 # findfunc
 
-findfunc implements a super simple framework to quickly find the function that satifisfies a set of equations using a neural network. It is similar to PINNs in the way the given equations can be PDEs. Under the hood, a SIREN network is trained to minimize a set of losses formulated from the different equations.
+findfunc implements a super simple framework to quickly find the function that satifisfies a set of equations using a neural network. It is similar to [PINNs](https://github.com/maziarraissi/PINNs) in the way the given equations can be PDEs. Under the hood, a [SIREN network](https://arxiv.org/abs/2006.09661) is trained to minimize a set of losses formulated from the different equations.
 
 ## Simple
 Below is an example of a simple config file where the network is trained to fit the function `f(x, y) = x * y`
