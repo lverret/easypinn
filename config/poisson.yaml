@@ -1,0 +1,13 @@
+unknown:
+  - f
+residuals:
+  top:
+    - f
+  bottom:
+    - f
+  left:
+    - f
+  right:
+    - f
+  domain:
+    - "grad(grad(f, x), x) + grad(grad(f, y), y) + 2 * 3.14 ** 2 * sin(3.14 * x) * sin(3.14 * y)"
