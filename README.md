@@ -18,7 +18,7 @@ equations:
 ```
 `python findfunc.py --config config/simple.yaml --output_file out.gif`
 
-![simple](https://github.com/user-attachments/assets/86c46751-a743-43f2-89e8-0353adf17b46)
+![simple](https://github.com/user-attachments/assets/a2ea2089-214d-4bff-be2c-87b64e680503)
 
 ## Heat
 ```yaml
@@ -32,7 +32,7 @@ equations:
 ```
 `python findfunc.py --config config/heat.yaml --output_file out.gif`
 
-![heat](https://github.com/user-attachments/assets/9cf10dd7-1600-4789-b2f4-7526181343c7)
+![heat](https://github.com/user-attachments/assets/ddd6bdeb-02f0-4a20-9e93-40bde02e8426)
 
 ## Burger
 ```yaml
@@ -53,7 +53,7 @@ equations:
 ## Helmholtz
 `python findfunc.py --config config/helmholtz.yaml --output_file out.gif`
 
-![helmholtz](https://github.com/user-attachments/assets/d799a41d-3882-49b2-840e-a7b2ebca5ed9)
+![helmholtz](https://github.com/user-attachments/assets/d8180997-3e8c-457e-9a8f-75b9c6a48f7f)
 
 ## Schrödinger
 `python findfunc.py --config config/schrodinger.yaml --output_file out.gif`
@@ -62,4 +62,5 @@ equations:
 ## Navier-Stokes (Lid-driven cavity, Re=100)
 `python findfunc.py --config config/navier_stokes.yaml --output_file out.gif`
 
-![navier_stokes](https://github.com/user-attachments/assets/4d9ed268-6632-4945-b363-9f2e856c5545)
+![navier_stokes](https://github.com/user-attachments/assets/1b6657f3-d04f-4486-9022-57ce382e23cc)
+
