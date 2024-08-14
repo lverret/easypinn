@@ -16,7 +16,10 @@ equations:
   domain:
     - f = x * y
 ```
-`python findfunc.py --config config/simple.yaml --output_file out.gif`
+
+```bash
+python findfunc.py --config config/simple.yaml --output_file out.gif
+```
 
 <img src="https://github.com/user-attachments/assets/a2ea2089-214d-4bff-be2c-87b64e680503" width="300" height="250"/>
 
@@ -31,7 +34,10 @@ equations:
   domain:
     - grad(f, x) = 0.025 * grad(grad(f, y), y)
 ```
-`python findfunc.py --config config/heat.yaml --output_file out.gif`
+
+```bash
+python findfunc.py --config config/heat.yaml --output_file out.gif
+```
 
 <img src="https://github.com/user-attachments/assets/ddd6bdeb-02f0-4a20-9e93-40bde02e8426" width="300" height="250"/>
 
@@ -49,22 +55,34 @@ equations:
   domain:
     - grad(f, x) + 0.5 * f * grad(f, y) - 0.25 * (0.01 / 3.14) * grad(grad(f, y), y) = 0
 ```
-`python findfunc.py --config config/burger.yaml --output_file out.gif`
+
+```bash
+python findfunc.py --config config/burger.yaml --output_file out.gif
+```
 
 <img src="https://github.com/user-attachments/assets/883c68d4-5124-4e56-a1ab-b9b0c7152efe" width="300" height="250"/>
 
 ## Helmholtz
-`python findfunc.py --config config/helmholtz.yaml --output_file out.gif`
+
+```bash
+python findfunc.py --config config/helmholtz.yaml --output_file out.gif
+```
 
 <img src="https://github.com/user-attachments/assets/d8180997-3e8c-457e-9a8f-75b9c6a48f7f" width="300" height="250"/>
 
 ## Schrödinger
-`python findfunc.py --config config/schrodinger.yaml --output_file out.gif`
+
+```bash
+python findfunc.py --config config/schrodinger.yaml --output_file out.gif
+```
 
 <img src="https://github.com/user-attachments/assets/7f23916b-0943-43d7-828a-b9582480bad3" width="600" height="250"/>
 
 ## Navier-Stokes (Lid-driven cavity, Re=100)
-`python findfunc.py --config config/navier_stokes.yaml --output_file out.gif`
+
+```bash
+python findfunc.py --config config/navier_stokes.yaml --output_file out.gif
+```
 
 <img src="https://github.com/user-attachments/assets/1b6657f3-d04f-4486-9022-57ce382e23cc" width="900" height="250"/>
 
@@ -77,6 +95,9 @@ equations:
   image: 
     - "starry_night.png"
 ```
-`python findfunc.py --config config/starry_night.yaml --output_file out.gif --omega_0 100.0 --hidden_features 512 --hidden_layers 8`
+
+```bash
+python findfunc.py --config config/starry_night.yaml --output_file out.gif --omega_0 100.0 --hidden_features 512 --hidden_layers 8
+```
 
 <img src="https://github.com/user-attachments/assets/8fbb52f4-9356-4d34-85e6-bfde3c07fcc6" width="300" height="250"/>
