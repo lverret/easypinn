@@ -34,30 +34,30 @@ equations:
 
 ![heat](https://github.com/user-attachments/assets/9cf10dd7-1600-4789-b2f4-7526181343c7)
 
-## Poisson
+## Burger
 ```yaml
 unknown:
   - f
 equations:
+  left:
+    - f = sin(2 * 3.14 * y)
   top:
     - f = 0
   bottom:
     - f = 0
-  left:
-    - f = 0
-  right:
-    - f = 0
   domain:
-    - grad(grad(f, x), x) + grad(grad(f, y), y) = - 2 * 3.14 ** 2 * sin(3.14 * x) * sin(3.14 * y)
+    - grad(f, x) + 0.5 * f * grad(f, y) - 0.25 * (0.01 / 3.14) * grad(grad(f, y), y) = 0
 ```
-`python findfunc.py --config config/poisson.yaml --output_file out.gif`
-
-![poisson](https://github.com/user-attachments/assets/17e738dc-0918-46bc-b0b4-b1085cc990b8)
+`python findfunc.py --config config/burger.yaml --output_file out.gif`
 
 ## Helmholtz
 `python findfunc.py --config config/helmholtz.yaml --output_file out.gif`
 
 ![helmholtz](https://github.com/user-attachments/assets/d799a41d-3882-49b2-840e-a7b2ebca5ed9)
+
+## Schrödinger
+`python findfunc.py --config config/schrodinger.yaml --output_file out.gif`
+
 
 ## Navier-Stokes (Lid-driven cavity, Re=100)
 `python findfunc.py --config config/navier_stokes.yaml --output_file out.gif`

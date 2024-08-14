@@ -1,0 +1,10 @@
+unknown:
+  - re
+  - im
+equations:
+  left:
+    - re = exp(-(2*y-1) ** 2) * cos(2*y-1) * cos(2*y-1)
+    - im = exp(-(2*y-1) ** 2) * cos(2*y-1) * sin(2*y-1)
+  domain:
+    - grad(im, x) = 0.25 * grad(grad(re, y), y)
+    - grad(re, x) = - 0.25 * grad(grad(im, y), y)

@@ -13,7 +13,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 
 
 class SineLayer(torch.nn.Module):
-    def __init__(self, in_features, out_features, is_first=False, omega_0=30):
+    def __init__(self, in_features, out_features, is_first=False, omega_0=30.0):
         super().__init__()
         self.omega_0 = omega_0
         self.is_first = is_first
@@ -42,7 +42,7 @@ class Siren(torch.nn.Module):
         hidden_features,
         hidden_layers,
         out_features,
-        first_omega_0=3,
+        first_omega_0=3.0,
         hidden_omega_0=3.0,
     ):
         super().__init__()
@@ -80,11 +80,15 @@ class Siren(torch.nn.Module):
 
 
 def sin(y):
-    return torch.sin(y)
+    return torch.sin(torch.as_tensor(y))
 
 
 def cos(y):
-    return torch.cos(y)
+    return torch.cos(torch.as_tensor(y))
+
+
+def exp(y):
+    return torch.exp(torch.as_tensor(y))
 
 
 def grad(y, x):
@@ -97,22 +101,22 @@ def grad(y, x):
 # Training and visualization functions
 
 
-def generate_samples(config):
+def generate_samples(equations):
     xy_list = []
-    for res in config["equations"]:
-        if res == "top":
+    for location in equations:
+        if location == "top":
             x = torch.rand((args.nb_samples, 1))
             y = torch.ones((args.nb_samples, 1))
-        elif res == "bottom":
+        elif location == "bottom":
             x = torch.rand((args.nb_samples, 1))
             y = torch.zeros((args.nb_samples, 1))
-        elif res == "left":
+        elif location == "left":
             x = torch.zeros((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
-        elif res == "right":
+        elif location == "right":
             x = torch.ones((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
-        elif res == "domain":
+        elif location == "domain":
             x = torch.rand((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
         x = x.clone().detach().requires_grad_(True).to(args.device)
@@ -121,17 +125,17 @@ def generate_samples(config):
     return xy_list
 
 
-def compute_loss(out_list, xy_list, config):
+def compute_loss(out_list, xy_list, unknown, equations):
     loss = 0
-    res = list(config["equations"].values())
-    for out, (x, y), type in zip(out_list, xy_list, config["equations"]):
-        for k, var in enumerate(config["unknown"]):
+    res = list(equations.values())
+    for out, (x, y), location in zip(out_list, xy_list, equations):
+        for k, var in enumerate(unknown):
             exec(f"{var}=out[:, k:k+1]")
-        if type == "domain":
+        if location == "domain":
             w = 0.1
         else:
             w = 0.9
-        for res in config["equations"][type]:
+        for res in equations[location]:
             splits = res.split("=")
             assert len(splits) == 2, "Incorrect definition of equations"
             lhs, rhs = splits
@@ -190,13 +194,15 @@ if __name__ == "__main__":
     with open(f"{args.config}", "r") as fd:
         config = yaml.safe_load(fd)
 
+    unknown, equations = config["unknown"], config["equations"]
+
     model = Siren(
         in_features=2,
         hidden_features=256,
         hidden_layers=4,
-        out_features=len(config["unknown"]),
-        first_omega_0=10,
-        hidden_omega_0=30,
+        out_features=len(unknown),
+        first_omega_0=10.0,
+        hidden_omega_0=30.0,
     ).to(args.device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -206,9 +212,9 @@ if __name__ == "__main__":
     frames = []
 
     for it in pbar:
-        xy_list = generate_samples(config)
+        xy_list = generate_samples(equations)
         out_list = model(xy_list)
-        loss = compute_loss(out_list, xy_list, config)
+        loss = compute_loss(out_list, xy_list, unknown, equations)
         model.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
@@ -225,4 +231,4 @@ if __name__ == "__main__":
             out = out.rot90().cpu().data.numpy()
             frames.append(out)
 
-    make_gif(frames, config["unknown"])
+    make_gif(frames, unknown)
