@@ -1,5 +1,5 @@
 unknown:
   - f
 equations:
-  image: 
-    - "starry_night.png"
+  domain: 
+    - f = image('starry_night.png', x, y)

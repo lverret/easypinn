@@ -100,6 +100,14 @@ def tanh(y):
     return torch.tanh(torch.as_tensor(y))
 
 
+def image(path, x, y):
+    image = np.array(Image.open(path).convert("L"))
+    image = torch.tensor(image).rot90(-1) / 255
+    image = image.to(x.device)
+    px, py = ((x * image.size(0)).long(), (y * image.size(1)).long())
+    return image[px, py]
+
+
 def grad(y, x):
     return torch.autograd.grad(
         y, [x], grad_outputs=torch.ones_like(y), create_graph=True
@@ -125,9 +133,11 @@ def generate_samples(equations):
         elif location == "right":
             x = torch.ones((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
-        elif location in ["domain", "image"]:
+        elif location == "domain":
             x = torch.rand((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
+        else:
+            raise ValueError(f"Invalid location '{location}'")
         x = x.clone().detach().requires_grad_(True).to(args.device)
         y = y.clone().detach().requires_grad_(True).to(args.device)
         xy_list.append((x, y))
@@ -140,24 +150,15 @@ def compute_loss(out_list, xy_list, unknown, equations):
     for out, (x, y), location in zip(out_list, xy_list, equations):
         for k, var in enumerate(unknown):
             exec(f"{var}=out[:, k:k+1]")
-        if location == "image":
-            assert len(unknown) == 1, "Image only supports 1 unknown"
-            assert len(equations[location]) == 1, "Image only supports 1 equation"
-            image = np.array(Image.open(equations[location][0]).convert("L"))
-            image = torch.tensor(image).rot90(-1) / 255
-            image = image.to(out.device)
-            px, py = ((x * image.size(0)).long(), (y * image.size(1)).long())
-            loss += torch.mean(torch.abs(out - image[px, py]))
+        if location == "domain":
+            w = 0.1
         else:
-            if location == "domain":
-                w = 0.1
-            else:
-                w = 0.9
-            for res in equations[location]:
-                splits = res.split("=")
-                assert len(splits) == 2, "Incorrect definition of equations"
-                lhs, rhs = splits
-                loss += w * torch.mean(torch.abs(eval(f"{lhs} - ({rhs})")))
+            w = 0.9
+        for res in equations[location]:
+            splits = res.split("=")
+            assert len(splits) == 2, "Incorrect definition of equations"
+            lhs, rhs = splits
+            loss += w * torch.mean(torch.abs(eval(f"{lhs} - ({rhs})")))
     return loss
 
 

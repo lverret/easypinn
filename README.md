@@ -75,8 +75,8 @@ equations:
 unknown:
   - f
 equations:
-  image: 
-    - "starry_night.png"
+  domain: 
+    - f = image('starry_night.png', x, y)
 ```
 `python findfunc.py --config config/starry_night.yaml --output_file out.gif --omega_0 100.0 --hidden_features 512 --hidden_layers 8`
 
