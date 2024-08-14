@@ -3,12 +3,9 @@ import argparse
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-import imageio
-import warnings
 
 from tqdm import trange
-
-warnings.filterwarnings("ignore")
+from matplotlib.animation import FuncAnimation, PillowWriter
 
 
 # -----------------------------------------------------------------------------
@@ -97,7 +94,7 @@ def grad(y, x):
 
 
 # -----------------------------------------------------------------------------
-# Training functions
+# Training and visualization functions
 
 
 def generate_samples(config):
@@ -124,27 +121,6 @@ def generate_samples(config):
     return xy_list
 
 
-def create_images(out, resolution, config):
-    images = []
-    for k, var in zip(range(out.size(-1)), config["unknown"]):
-        z = out[:, k]
-        z = z.view(resolution, resolution).rot90()
-        fig, ax = plt.subplots(figsize=(4.8, 4.0))
-        im = ax.imshow(z.cpu().data.numpy(), extent=(0, 1, 0, 1))
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_title(var)
-        fig.colorbar(im)
-        ax.margins(0)
-        fig.canvas.draw()
-        ncols, nrows = fig.canvas.get_width_height()
-        z = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        z = z.reshape((nrows, ncols, 3))
-        images.append(z)
-        plt.close(fig)
-    return np.hstack(images)
-
-
 def compute_loss(out_list, xy_list, config):
     loss = 0
     res = list(config["equations"].values())
@@ -163,6 +139,35 @@ def compute_loss(out_list, xy_list, config):
     return loss
 
 
+def make_gif(frames, vars):
+    ims = []
+    fig, axs = plt.subplots(1, len(vars), figsize=(4.8 * len(vars), 4.0))
+    if len(vars) == 1:
+        axs = (axs,)
+    for k, var in enumerate(vars):
+        ims.append(axs[k].imshow(frames[0][:, :, k], extent=(0, 1, 0, 1)))
+        fig.colorbar(ims[k], ax=axs[k])
+        axs[k].set_xlabel("x")
+        axs[k].set_ylabel("y")
+        axs[k].set_title(var)
+        axs[k].margins(0)
+
+    def animate(i):
+        out = frames[i]
+        for k in range(out.shape[-1]):
+            z = out[:, :, k]
+            ims[k].set_data(z)
+            ims[k].set_clim(z.min(), z.max())
+
+    ani = FuncAnimation(fig, animate, frames=len(frames))
+    pbar = trange(len(frames), desc="Generating GIF")
+    ani.save(
+        args.output_file,
+        writer=PillowWriter(fps=len(frames) / 3),
+        progress_callback=lambda i, n: pbar.update(1),
+    )
+
+
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -175,6 +180,9 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
     parser.add_argument(
         "--resolution", type=int, default=128, help="image resolution for the gif"
+    )
+    parser.add_argument(
+        "--nb_frames", type=int, default=50, help="number of frames for the gif"
     )
     parser.add_argument("--device", type=str, default="cpu", help="device to use")
     args = parser.parse_args()
@@ -194,8 +202,8 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
 
-    video = []
     pbar = trange(args.nb_iter, desc="Finding function")
+    frames = []
 
     for it in pbar:
         xy_list = generate_samples(config)
@@ -206,14 +214,15 @@ if __name__ == "__main__":
         optimizer.step()
         scheduler.step()
         pbar.set_postfix(loss=loss.item())
-        if it % max(1, (args.nb_iter // 50)) == 0:
+        if it % max(1, (args.nb_iter // args.nb_frames)) == 0:
             xy = torch.cartesian_prod(
                 torch.linspace(0, 1, args.resolution),
                 torch.linspace(0, 1, args.resolution),
             ).to(args.device)
             xy_test = [(xy[:, 0:1], xy[:, 1:2])]
-            out = model(xy_test)
-            images = create_images(out[0], args.resolution, config)
-            video.append(images)
+            out = model(xy_test)[0]
+            out = out.view(args.resolution, args.resolution, out.size(-1))
+            out = out.rot90().cpu().data.numpy()
+            frames.append(out)
 
-    imageio.mimsave(args.output_file, np.array(video), loop=0)
+    make_gif(frames, config["unknown"])
