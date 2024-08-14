@@ -78,4 +78,6 @@ equations:
   image: 
     - "starry_night.png"
 ```
-`python findfunc.py --config config/starry_night.yaml --output_file out.gif --device cuda --omega_0 100.0 --hidden_features 512 --hidden_layers 8`
+`python findfunc.py --config config/starry_night.yaml --output_file out.gif --omega_0 100.0 --hidden_features 512 --hidden_layers 8`
+
+![starry_night](https://github.com/user-attachments/assets/8fbb52f4-9356-4d34-85e6-bfde3c07fcc6)
