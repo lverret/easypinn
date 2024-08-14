@@ -64,3 +64,14 @@ equations:
 
 ![navier_stokes](https://github.com/user-attachments/assets/1b6657f3-d04f-4486-9022-57ce382e23cc)
 
+
+## Image
+
+```yaml
+unknown:
+  - f
+equations:
+  image: 
+    - "starry_night.png"
+```
+`python findfunc.py --config config/starry_night.yaml --output_file out.gif --device cuda --omega_0 100.0 --hidden_features 512 --hidden_layers 8`

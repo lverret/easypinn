@@ -5,6 +5,7 @@ import torch
 import matplotlib.pyplot as plt
 
 from tqdm import trange
+from PIL import Image
 from matplotlib.animation import FuncAnimation, PillowWriter
 
 
@@ -91,6 +92,14 @@ def exp(y):
     return torch.exp(torch.as_tensor(y))
 
 
+def abs(y):
+    return torch.abs(torch.as_tensor(y))
+
+
+def tanh(y):
+    return torch.tanh(torch.as_tensor(y))
+
+
 def grad(y, x):
     return torch.autograd.grad(
         y, [x], grad_outputs=torch.ones_like(y), create_graph=True
@@ -116,7 +125,7 @@ def generate_samples(equations):
         elif location == "right":
             x = torch.ones((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
-        elif location == "domain":
+        elif location in ["domain", "image"]:
             x = torch.rand((args.nb_samples, 1))
             y = torch.rand((args.nb_samples, 1))
         x = x.clone().detach().requires_grad_(True).to(args.device)
@@ -131,15 +140,24 @@ def compute_loss(out_list, xy_list, unknown, equations):
     for out, (x, y), location in zip(out_list, xy_list, equations):
         for k, var in enumerate(unknown):
             exec(f"{var}=out[:, k:k+1]")
-        if location == "domain":
-            w = 0.1
+        if location == "image":
+            assert len(unknown) == 1, "Image only supports 1 unknown"
+            assert len(equations[location]) == 1, "Image only supports 1 equation"
+            image = np.array(Image.open(equations[location][0]).convert("L"))
+            image = torch.tensor(image).rot90(-1) / 255
+            image = image.to(out.device)
+            px, py = ((x * image.size(0)).long(), (y * image.size(1)).long())
+            loss += torch.mean(torch.abs(out - image[px, py]))
         else:
-            w = 0.9
-        for res in equations[location]:
-            splits = res.split("=")
-            assert len(splits) == 2, "Incorrect definition of equations"
-            lhs, rhs = splits
-            loss += w * torch.mean(torch.abs(eval(f"{lhs} - ({rhs})")))
+            if location == "domain":
+                w = 0.1
+            else:
+                w = 0.9
+            for res in equations[location]:
+                splits = res.split("=")
+                assert len(splits) == 2, "Incorrect definition of equations"
+                lhs, rhs = splits
+                loss += w * torch.mean(torch.abs(eval(f"{lhs} - ({rhs})")))
     return loss
 
 
@@ -183,6 +201,15 @@ if __name__ == "__main__":
     )
     parser.add_argument("--lr", type=float, default=0.0001, help="learning rate")
     parser.add_argument(
+        "--hidden_layers", type=int, default=4, help="number of hidden layers"
+    )
+    parser.add_argument(
+        "--hidden_features", type=int, default=256, help="size of the hidden features"
+    )
+    parser.add_argument(
+        "--omega_0", type=float, default=10.0, help="first omega_0 of siren"
+    )
+    parser.add_argument(
         "--resolution", type=int, default=128, help="image resolution for the gif"
     )
     parser.add_argument(
@@ -198,10 +225,10 @@ if __name__ == "__main__":
 
     model = Siren(
         in_features=2,
-        hidden_features=256,
-        hidden_layers=4,
+        hidden_features=args.hidden_features,
+        hidden_layers=args.hidden_layers,
         out_features=len(unknown),
-        first_omega_0=10.0,
+        first_omega_0=args.omega_0,
         hidden_omega_0=30.0,
     ).to(args.device)
 
