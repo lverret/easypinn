@@ -195,7 +195,9 @@ def make_gif(frames, vars):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="path to the config file")
-    parser.add_argument("--output_file", type=str, help="output filename for the gif")
+    parser.add_argument(
+        "--output_file", type=str, default="out.gif", help="output filename for the gif"
+    )
     parser.add_argument("--nb_iter", type=int, default=500, help="number of iterations")
     parser.add_argument(
         "--nb_samples", type=int, default=1000, help="number of uniform samples"
