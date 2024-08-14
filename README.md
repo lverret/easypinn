@@ -50,6 +50,8 @@ equations:
 ```
 `python findfunc.py --config config/burger.yaml --output_file out.gif`
 
+![burger](https://github.com/user-attachments/assets/883c68d4-5124-4e56-a1ab-b9b0c7152efe)
+
 ## Helmholtz
 `python findfunc.py --config config/helmholtz.yaml --output_file out.gif`
 
@@ -57,6 +59,8 @@ equations:
 
 ## Schrödinger
 `python findfunc.py --config config/schrodinger.yaml --output_file out.gif`
+
+![schrodinger](https://github.com/user-attachments/assets/7f23916b-0943-43d7-828a-b9582480bad3)
 
 
 ## Navier-Stokes (Lid-driven cavity, Re=100)
