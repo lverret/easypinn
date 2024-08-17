@@ -1,8 +1,0 @@
-unknown:
-  - f
-equations:
-  left:
-    - f = exp(-(2*y-1)**2) * cos(2*y-1)
-    - grad(f, x) = exp(-(2*y-1)**2) * sin(2*y-1)
-  domain:
-    - grad(grad(f, x), x) - 0.25 * grad(grad(f, y), y) = exp(-(2*y-1)**2) * (4 * (2*y-1) * sin(x-(2*y-1)) + (2-4*(2*y-1)**2) * cos(x-(2*y-1)))

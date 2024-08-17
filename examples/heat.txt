@@ -1,0 +1,2 @@
+T(0, y) = sin(4 * 3.14 * y)
+grad(T, x) = 0.025 * grad(grad(T, y), y)

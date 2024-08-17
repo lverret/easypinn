@@ -1,12 +1,20 @@
-import yaml
 import argparse
+import ast
 import numpy as np
 import torch
+import operator
 import matplotlib.pyplot as plt
 
+from inspect import signature
 from tqdm import trange
 from PIL import Image
 from matplotlib.animation import FuncAnimation, PillowWriter
+
+
+class InvalidFormula(Exception):
+    def __init__(self, formula, reason, *args):
+        self.message = f"'{formula}' ({reason})"
+        super(InvalidFormula, self).__init__(self.message, *args)
 
 
 # -----------------------------------------------------------------------------
@@ -72,8 +80,8 @@ class Siren(torch.nn.Module):
         self.net.append(final_linear)
         self.net = torch.nn.Sequential(*self.net)
 
-    def forward(self, xy_list):
-        return [self.net(torch.cat(xy, dim=-1)) for xy in xy_list]
+    def forward(self, x, y):
+        return self.net(torch.cat([x, y], dim=-1))
 
 
 # -----------------------------------------------------------------------------
@@ -114,51 +122,159 @@ def grad(y, x):
     )[0]
 
 
+OPS = {
+    ast.USub: operator.neg,
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+}
+
+
+FUNS = {
+    "sin": sin,
+    "cos": cos,
+    "exp": exp,
+    "abs": abs,
+    "tanh": tanh,
+    "image": image,
+    "grad": grad,
+}
+
+
+# -----------------------------------------------------------------------------
+# Parser functions
+
+
+def parse_equations(equations):
+    vars = {}
+    bcs = []
+    for formula in equations:
+        splits = formula.split("=")
+        if len(splits) != 2:
+            raise InvalidFormula(formula, "Not a equation")
+        lhs, rhs = splits
+        bc = {"x": [False, False], "y": [False, False]}
+        vars |= parse(formula, ast.parse(lhs.strip(), mode="eval").body, vars, bc)
+        vars |= parse(formula, ast.parse(rhs.strip(), mode="eval").body, vars, bc)
+        # vars |= parse(
+        #     formula, ast.parse(f"{lhs} - ({rhs})".strip(), mode="eval").body, vars, bc
+        # )
+        if not bc["x"][0] and bc["x"][1] or not bc["y"][0] and bc["y"][1]:
+            raise InvalidFormula(formula, "Found impossible boundary condition(s)")
+        bcs.append(bc)
+    vars = list(vars.keys())
+    for k, var in enumerate(vars):
+        code = f"global {var}\n" f"def {var}(x, y): return model(x, y)[:, {k}:{k+1}]"
+        exec(compile(code, "", "exec"))
+        FUNS[var] = globals()[var]
+    print(f"Parsed {len(vars)} unknown fonction(s) to find: {vars}")
+    return vars, bcs
+
+
+def parse(formula, node, vars, bc):
+    if isinstance(node, ast.Constant):
+        return vars
+    elif isinstance(node, ast.UnaryOp) and type(node.op) in OPS:
+        return parse(formula, node.operand, vars, bc)
+    elif isinstance(node, ast.BinOp) and type(node.op) in OPS:
+        vars |= parse(formula, node.left, vars, bc)
+        vars |= parse(formula, node.right, vars, bc)
+        return vars
+    elif isinstance(node, ast.Call):
+        if isinstance(node.func, ast.Name) and node.func.id in FUNS:
+            if len(node.args) != len(signature(FUNS[node.func.id]).parameters):
+                raise InvalidFormula(
+                    formula, f"Invalid nb of args for '{node.func.id}'"
+                )
+            for arg in node.args:
+                vars |= parse(formula, arg, vars, bc)
+            return vars
+        elif isinstance(node.func, ast.Name) and node.func.id not in FUNS:
+            if not all(isinstance(arg, (ast.Constant, ast.Name)) for arg in node.args):
+                raise InvalidFormula(formula, f"Found invalid arg for '{node.func.id}'")
+            if len(node.args) != 2:
+                raise InvalidFormula(
+                    formula, f"Invalid nb of args for '{node.func.id}'"
+                )
+            if (
+                isinstance(node.args[0], ast.Name)
+                and node.args[0].id != "x"
+                or isinstance(node.args[1], ast.Name)
+                and node.args[1].id != "y"
+            ):
+                raise InvalidFormula(
+                    formula, f"'{node.func.id}' takes as args only (x, y) in that order"
+                )
+            for arg in node.args:
+                if isinstance(arg, ast.Name):
+                    bc[arg.id][0] = True
+                elif isinstance(arg, ast.Num):
+                    if not 0 <= arg.n <= 1:
+                        raise InvalidFormula(
+                            formula, "Only functions in [0, 1] x [0, 1] are supported"
+                        )
+            vars[node.func.id] = None
+            return vars
+    elif isinstance(node, ast.Name):
+        if node.id not in ["x", "y"]:
+            vars = parse(
+                formula,
+                ast.Call(ast.Name(node.id), [ast.Name("x"), ast.Name("y")]),
+                vars,
+                bc,
+            )
+            return vars
+        else:
+            bc[node.id][1] = True
+            return vars
+    raise InvalidFormula(formula, "Found unsupported token(s)")
+
+
+def eval(node, samples):
+    if isinstance(node, ast.Num):
+        return samples["__c__"] * node.n
+    elif isinstance(node, ast.Str):
+        return node.s
+    elif isinstance(node, ast.UnaryOp) and type(node.op) in OPS:
+        return OPS[type(node.op)](eval(node.operand, samples))
+    elif isinstance(node, ast.BinOp) and type(node.op) in OPS:
+        return OPS[type(node.op)](eval(node.left, samples), eval(node.right, samples))
+    elif isinstance(node, ast.Call) and node.func.id in FUNS:
+        return FUNS[node.func.id](*(eval(arg, samples) for arg in node.args))
+    elif isinstance(node, ast.Name):
+        if node.id in ["x", "y"]:
+            return samples[node.id]
+        else:
+            return eval(
+                ast.Call(ast.Name(node.id), [ast.Name("x"), ast.Name("y")]), samples
+            )
+    raise RuntimeError()
+
+
 # -----------------------------------------------------------------------------
 # Training and visualization functions
 
 
-def generate_samples(equations):
-    xy_list = []
-    for location in equations:
-        if location == "top":
-            x = torch.rand((args.nb_samples, 1))
-            y = torch.ones((args.nb_samples, 1))
-        elif location == "bottom":
-            x = torch.rand((args.nb_samples, 1))
-            y = torch.zeros((args.nb_samples, 1))
-        elif location == "left":
-            x = torch.zeros((args.nb_samples, 1))
-            y = torch.rand((args.nb_samples, 1))
-        elif location == "right":
-            x = torch.ones((args.nb_samples, 1))
-            y = torch.rand((args.nb_samples, 1))
-        elif location == "domain":
-            x = torch.rand((args.nb_samples, 1))
-            y = torch.rand((args.nb_samples, 1))
-        else:
-            raise ValueError(f"Invalid location '{location}'")
-        x = x.clone().detach().requires_grad_(True).to(args.device)
-        y = y.clone().detach().requires_grad_(True).to(args.device)
-        xy_list.append((x, y))
-    return xy_list
+def generate_samples():
+    x = torch.rand(args.nb_samples, 1)
+    y = torch.rand(args.nb_samples, 1)
+    c = torch.ones(args.nb_samples, 1)
+    x = x.clone().detach().requires_grad_(True).to(args.device)
+    y = y.clone().detach().requires_grad_(True).to(args.device)
+    c = c.clone().detach().requires_grad_(True).to(args.device)
+    return {"x": x, "y": y, "__c__": c}
 
 
-def compute_loss(out_list, xy_list, unknown, equations):
+def compute_loss(equations, bcs):
     loss = 0
-    res = list(equations.values())
-    for out, (x, y), location in zip(out_list, xy_list, equations):
-        for k, var in enumerate(unknown):
-            exec(f"{var}=out[:, k:k+1]")
-        if location == "domain":
-            w = 0.1
-        else:
-            w = 0.9
-        for res in equations[location]:
-            splits = res.split("=")
-            assert len(splits) == 2, "Incorrect definition of equations"
-            lhs, rhs = splits
-            loss += w * torch.mean(torch.abs(eval(f"{lhs} - ({rhs})")))
+    for formula, bc in zip(equations, bcs):
+        lhs, rhs = formula.split("=")
+        samples = generate_samples()
+        w = 0.9 if not bc["x"][0] or not bc["y"][0] else 0.1
+        res = eval(ast.parse(f"{lhs} - ({rhs})".strip(), mode="eval").body, samples)
+        loss += w * torch.mean(torch.abs(res))
     return loss
 
 
@@ -194,9 +310,11 @@ def make_gif(frames, vars):
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, help="path to the config file")
     parser.add_argument(
-        "--output_file", type=str, default="out.gif", help="output filename for the gif"
+        "--input_file", "-i", type=str, help="input filename with one equation per line"
+    )
+    parser.add_argument(
+        "--output_file", "-o", type=str, default="out.gif", help="output gif filename"
     )
     parser.add_argument("--nb_iter", type=int, default=500, help="number of iterations")
     parser.add_argument(
@@ -221,16 +339,17 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cpu", help="device to use")
     args = parser.parse_args()
 
-    with open(f"{args.config}", "r") as fd:
-        config = yaml.safe_load(fd)
+    with open(args.input_file, "r") as f:
+        data = f.read()
+    equations = data.splitlines()
 
-    unknown, equations = config["unknown"], config["equations"]
+    vars, bcs = parse_equations(equations)
 
     model = Siren(
         in_features=2,
         hidden_features=args.hidden_features,
         hidden_layers=args.hidden_layers,
-        out_features=len(unknown),
+        out_features=len(vars),
         first_omega_0=args.omega_0,
         hidden_omega_0=30.0,
     ).to(args.device)
@@ -238,13 +357,11 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
 
-    pbar = trange(args.nb_iter, desc="Finding function")
+    pbar = trange(args.nb_iter, desc="Finding function(s)")
     frames = []
 
     for it in pbar:
-        xy_list = generate_samples(equations)
-        out_list = model(xy_list)
-        loss = compute_loss(out_list, xy_list, unknown, equations)
+        loss = compute_loss(equations, bcs)
         model.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
@@ -255,10 +372,9 @@ if __name__ == "__main__":
                 torch.linspace(0, 1, args.resolution),
                 torch.linspace(0, 1, args.resolution),
             ).to(args.device)
-            xy_test = [(xy[:, 0:1], xy[:, 1:2])]
-            out = model(xy_test)[0]
+            out = model(xy[:, 0:1], xy[:, 1:2])
             out = out.view(args.resolution, args.resolution, out.size(-1))
             out = out.rot90().cpu().data.numpy()
             frames.append(out)
 
-    make_gif(frames, unknown)
+    make_gif(frames, vars)
