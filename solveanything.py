@@ -169,7 +169,7 @@ def parse_equations(equations):
         code = f"global {var}\n" f"def {var}(x, y): return model(x, y)[:, {k}:{k+1}]"
         exec(compile(code, "", "exec"))
         FUNS[var] = globals()[var]
-    print(f"Parsed {len(vars)} unknown fonction(s) to find: {vars}")
+    print(f"Found {len(vars)} unknown fonction(s) to approximate: {vars}")
     return vars, bcs
 
 
