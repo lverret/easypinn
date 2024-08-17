@@ -158,9 +158,6 @@ def parse_equations(equations):
         bc = {"x": [False, False], "y": [False, False]}
         vars |= parse(formula, ast.parse(lhs.strip(), mode="eval").body, vars, bc)
         vars |= parse(formula, ast.parse(rhs.strip(), mode="eval").body, vars, bc)
-        # vars |= parse(
-        #     formula, ast.parse(f"{lhs} - ({rhs})".strip(), mode="eval").body, vars, bc
-        # )
         if not bc["x"][0] and bc["x"][1] or not bc["y"][0] and bc["y"][1]:
             raise InvalidFormula(formula, "Found impossible boundary condition(s)")
         bcs.append(bc)
