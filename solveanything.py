@@ -357,7 +357,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.99)
 
-    pbar = trange(args.nb_iter, desc="Finding function(s)")
+    pbar = trange(args.nb_iter, desc="Solving equation(s)")
     frames = []
 
     for it in pbar:

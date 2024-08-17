@@ -34,8 +34,7 @@ T(0, y) = sin(4 * 3.14 * y)
 grad(T, x) = 0.025 * grad(grad(T, y), y)
 ```
 
-<img src="https://github.com/user-attachments/assets/ddd6bdeb-02f0-4a20-9e93-40bde02e8426" width="300" height="250"/>
-
+<img src="https://github.com/user-attachments/assets/974c2d63-d35a-4906-85b3-577692cac26e" width="300" height="250"/>
 
 ## Navier-Stokes (Lid-driven cavity, Re=100)
 
