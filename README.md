@@ -1,6 +1,6 @@
 # solveanything
 
-solveanything takes as input a txt file where each line is a mathematical equation, and returns the 2D function that best satisfies all equations. It is similar to [PINNs](https://github.com/maziarraissi/PINNs) in the way that the given equations can be PDEs. Under the hood, a [SIREN network](https://arxiv.org/abs/2006.09661) is trained to minimize a set of losses formulated from the different equations. It also implements a simple parser of mathematical expressions to check the validity of each equation.
+solveanything takes as input a txt file where each line is a mathematical equation, and returns the 2D function that best satisfies all equations. It is similar to [PINNs](https://github.com/maziarraissi/PINNs) in the way that the given equations can be PDEs. Under the hood, a [SIREN network](https://arxiv.org/abs/2006.09661) is trained to minimize a set of losses formulated from the different equations. It also implements a basic parser of mathematical expressions to check the validity of each equation.
 
 Requirements:
 - [pytorch](https://pytorch.org/)
